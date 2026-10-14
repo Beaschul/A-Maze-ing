@@ -5,3 +5,18 @@ later projects, so it must stay independent from the application: it never
 imports ``app``, never prints, never reads user input and never exits.
 Errors are reported with exceptions.
 """
+
+from mazegen.constants import MAX_DIMENSION, MIN_DIMENSION
+from mazegen.errors import MazeError
+from mazegen.maze_generator import MazeGenerator
+from mazegen.walls import ALL_WALLS, Cell, Direction
+
+__all__ = [
+    "ALL_WALLS",
+    "MAX_DIMENSION",
+    "MIN_DIMENSION",
+    "Cell",
+    "Direction",
+    "MazeError",
+    "MazeGenerator",
+]
