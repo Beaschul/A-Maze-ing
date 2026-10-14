@@ -1,0 +1,5 @@
+# Development tools only: the program itself uses the standard library.
+flake8>=7.0     # style checker required by the subject (make lint)
+mypy>=1.10      # static type checker required by the subject (make lint)
+pytest>=8.0     # unit tests in tests/
+build>=1.2      # builds the mazegen .whl / .tar.gz package
