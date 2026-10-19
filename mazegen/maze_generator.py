@@ -4,7 +4,8 @@ Only the contract is defined here. Every method raises NotImplementedError
 until its issue is done.
 """
 
-from mazegen.walls import Cell, Direction
+from mazegen.directions import Direction
+from mazegen.walls import Cell
 
 
 class MazeGenerator:

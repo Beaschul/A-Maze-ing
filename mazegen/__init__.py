@@ -7,9 +7,10 @@ Errors are reported with exceptions.
 """
 
 from mazegen.constants import MAX_DIMENSION, MIN_DIMENSION
+from mazegen.directions import Direction
 from mazegen.errors import MazeError
 from mazegen.maze_generator import MazeGenerator
-from mazegen.walls import ALL_WALLS, Cell, Direction
+from mazegen.walls import ALL_WALLS, Cell
 
 __all__ = [
     "ALL_WALLS",

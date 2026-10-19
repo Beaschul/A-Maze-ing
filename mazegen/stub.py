@@ -25,9 +25,10 @@ The maze, entry at the top-left and exit at the bottom-right::
     +--+--+--+--+--+
 """
 
+from mazegen.directions import Direction
 from mazegen.errors import MazeError
 from mazegen.maze_generator import MazeGenerator
-from mazegen.walls import Cell, Direction
+from mazegen.walls import Cell
 
 _N, _E, _S, _W = (Direction.NORTH, Direction.EAST,
                   Direction.SOUTH, Direction.WEST)
