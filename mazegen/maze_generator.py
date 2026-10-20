@@ -4,10 +4,14 @@ Only the contract is defined here. Every method raises NotImplementedError
 until its issue is done.
 """
 
+import random
+import secrets
+
+from mazegen.algorithms import DEFAULT_ALGORITHM, get_carver
 from mazegen.directions import Direction
 from mazegen.errors import MazeError
 from mazegen.pattern import place_pattern
-from mazegen.walls import Cell
+from mazegen.walls import Cell, WallGrid
 
 
 class MazeGenerator:
@@ -25,6 +29,9 @@ class MazeGenerator:
           never from the global ``random`` module. When no seed is given,
           one is drawn and stored in :attr:`seed`, so the app can show it
           and the maze can be reproduced.
+        * Algorithm: chosen by name (see
+          :data:`mazegen.algorithms.ALGORITHMS`). Each one is a separate
+          strategy with the same signature.
         * Animations: :meth:`generate` records :attr:`carve_history` and
           :attr:`search_history`; the application replays them.
 
@@ -45,6 +52,7 @@ class MazeGenerator:
         *,
         perfect: bool = True,
         seed: int | None = None,
+        algorithm: str = DEFAULT_ALGORITHM,
     ) -> None:
         """Store the parameters of the maze.
 
@@ -57,45 +65,65 @@ class MazeGenerator:
                 False for a Pac-Man board (loops, few dead-ends).
             seed: Seed for reproducible mazes. None draws a random one,
                 available afterwards in ``self.seed``.
+            algorithm: Name of the generation algorithm, one of
+                :data:`mazegen.algorithms.ALGORITHMS`.
 
         Raises:
-            MazeError: If the size is out of bounds, or entry/exit are
-                outside the maze, equal, or on the "42" pattern.
+            MazeError: If the size is out of bounds, entry/exit are
+                outside the maze, equal, or on the "42" pattern, or the
+                algorithm is unknown.
         """
         self.width = width
         self.height = height
         self.entry = entry
         self.exit = exit
         self.perfect = perfect
-        self.seed = seed
+        self.seed: int = secrets.randbits(32) if seed is None else seed
+        self.algorithm = algorithm
+        self._carve = get_carver(algorithm)
+        self._walls: WallGrid | None = None
+        self._carve_history: list[tuple[Cell, Direction]] = []
         self._pattern: set[Cell] = place_pattern(width, height)
         if entry in self._pattern:
             raise MazeError(f"entry {entry} is on the \"42\" pattern")
         if exit in self._pattern:
             raise MazeError(f"exit {exit} is on the \"42\" pattern")
-        # TODO(#6): draw a seed when None, then create the private
-        # random.Random(self.seed) used by the algorithms.
 
     def generate(self) -> None:
         """Build the maze, its "42" pattern and its shortest path.
 
+        The random generator is created here from :attr:`seed`, so calling
+        it again rebuilds exactly the same maze.
+
         Raises:
             MazeError: If no valid maze exists for these parameters.
         """
-        raise NotImplementedError
+        rng = random.Random(self.seed)
+        walls = WallGrid(self.width, self.height)
+        # Before carving: block() refuses a cell with an open wall.
+        for cell in self._pattern:
+            walls.block(cell)
+        self._carve_history = self._carve(walls, rng, self.entry)
+        # TODO(#12): open loops when perfect is False.
+        # TODO(#7): shortest path and search_history.
+        self._walls = walls
 
     def has_wall(self, cell: Cell, direction: Direction) -> bool:
         """Tell whether the wall ``direction`` of ``cell`` is closed.
 
         Raises:
-            MazeError: If the cell is outside the maze.
+            MazeError: If the cell is outside the maze, or generate() was
+                not called yet.
         """
-        raise NotImplementedError
+        walls = self._require_walls()
+        if not walls.contains(cell):
+            raise MazeError(f"cell {cell} is outside the maze")
+        return walls.has_wall(cell, direction)
 
     @property
     def grid(self) -> list[list[int]]:
         """Copy of the wall masks, indexed ``grid[y][x]``."""
-        raise NotImplementedError
+        return self._require_walls().to_lists()
 
     @property
     def pattern_cells(self) -> set[Cell]:
@@ -115,9 +143,16 @@ class MazeGenerator:
     @property
     def carve_history(self) -> list[tuple[Cell, Direction]]:
         """Walls in the order they were opened, for the animation."""
-        raise NotImplementedError
+        self._require_walls()
+        return list(self._carve_history)
 
     @property
     def search_history(self) -> list[Cell]:
         """Cells in the order the solver explored them, for the animation."""
         raise NotImplementedError
+
+    def _require_walls(self) -> WallGrid:
+        """Return the wall grid, or raise MazeError before generate()."""
+        if self._walls is None:
+            raise MazeError("call generate() first")
+        return self._walls
