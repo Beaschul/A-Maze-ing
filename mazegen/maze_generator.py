@@ -1,7 +1,8 @@
 """MazeGenerator: the interface between the core and the application.
 
-Only the contract is defined here. Every method raises NotImplementedError
-until its issue is done.
+``generate()`` blocks the "42" pattern, carves the maze with the chosen
+algorithm and finds the shortest path (:mod:`mazegen.solver`). The
+application only reads the results through the properties.
 """
 
 import random
@@ -11,6 +12,7 @@ from mazegen.algorithms import DEFAULT_ALGORITHM, get_carver
 from mazegen.directions import Direction
 from mazegen.errors import MazeError
 from mazegen.pattern import place_pattern
+from mazegen.solver import Solution, solve
 from mazegen.walls import Cell, WallGrid
 
 
@@ -83,6 +85,7 @@ class MazeGenerator:
         self._carve = get_carver(algorithm)
         self._walls: WallGrid | None = None
         self._carve_history: list[tuple[Cell, Direction]] = []
+        self._solution: Solution | None = None
         self._pattern: set[Cell] = place_pattern(width, height)
         if entry in self._pattern:
             raise MazeError(f"entry {entry} is on the \"42\" pattern")
@@ -105,7 +108,7 @@ class MazeGenerator:
             walls.block(cell)
         self._carve_history = self._carve(walls, rng, self.entry)
         # TODO(#12): open loops when perfect is False.
-        # TODO(#7): shortest path and search_history.
+        self._solution = solve(walls, self.entry, self.exit)
         self._walls = walls
 
     def has_wall(self, cell: Cell, direction: Direction) -> bool:
@@ -133,12 +136,12 @@ class MazeGenerator:
     @property
     def solution(self) -> list[Cell]:
         """Cells of the shortest path, from entry to exit (inclusive)."""
-        raise NotImplementedError
+        return list(self._require_solution().path)
 
     @property
     def solution_directions(self) -> str:
         """The shortest path written with the letters N, E, S and W."""
-        raise NotImplementedError
+        return self._require_solution().directions
 
     @property
     def carve_history(self) -> list[tuple[Cell, Direction]]:
@@ -149,10 +152,16 @@ class MazeGenerator:
     @property
     def search_history(self) -> list[Cell]:
         """Cells in the order the solver explored them, for the animation."""
-        raise NotImplementedError
+        return list(self._require_solution().history)
 
     def _require_walls(self) -> WallGrid:
         """Return the wall grid, or raise MazeError before generate()."""
         if self._walls is None:
             raise MazeError("call generate() first")
         return self._walls
+
+    def _require_solution(self) -> Solution:
+        """Return the solution, or raise MazeError before generate()."""
+        if self._solution is None:
+            raise MazeError("call generate() first")
+        return self._solution
