@@ -39,6 +39,11 @@ class WallGrid:
     Every cell starts fully closed. The masks are private: the only way to
     change them is :meth:`open_wall`, which updates both sides of a wall.
 
+    Cells can be blocked with :meth:`block` (the "42" pattern): their walls
+    can never be opened, so they stay fully closed. Algorithms pick their
+    neighbours with :meth:`is_free` and treat blocked cells like cells
+    outside the grid.
+
     Args:
         width: Number of columns.
         height: Number of rows.
@@ -55,6 +60,7 @@ class WallGrid:
         self._cells: list[list[int]] = [
             [ALL_WALLS] * width for _ in range(height)
         ]
+        self._blocked: set[Cell] = set()
 
     def contains(self, cell: Cell) -> bool:
         """Tell whether ``cell`` lies inside the grid.
@@ -67,6 +73,37 @@ class WallGrid:
         """
         x, y = cell
         return 0 <= x < self.width and 0 <= y < self.height
+
+    def block(self, cell: Cell) -> None:
+        """Block ``cell``: none of its walls can be opened from now on.
+
+        Blocking must happen before carving, while the cell is still fully
+        closed.
+
+        Args:
+            cell: Position ``(x, y)`` inside the grid.
+
+        Raises:
+            ValueError: If the cell is outside the grid or one of its walls
+                is already open.
+        """
+        if not self.contains(cell):
+            raise ValueError(f"cannot block {cell}: outside the grid")
+        x, y = cell
+        if self._cells[y][x] != ALL_WALLS:
+            raise ValueError(f"cannot block {cell}: a wall is already open")
+        self._blocked.add(cell)
+
+    def is_free(self, cell: Cell) -> bool:
+        """Tell whether ``cell`` is inside the grid and not blocked.
+
+        Args:
+            cell: Position ``(x, y)`` to test.
+
+        Returns:
+            True if an algorithm may carve into the cell, False otherwise.
+        """
+        return self.contains(cell) and cell not in self._blocked
 
     def has_wall(self, cell: Cell, d: Direction) -> bool:
         """Tell whether the wall on side ``d`` of ``cell`` is closed.
@@ -89,12 +126,16 @@ class WallGrid:
             d: Side of the wall to open.
 
         Raises:
-            ValueError: If ``d`` points outside the grid (outer border).
+            ValueError: If ``d`` points outside the grid (outer border), or
+                ``cell`` or its neighbour is blocked.
         """
         other = neighbour(cell, d)
         if not self.contains(other):
             raise ValueError(
                 f"cannot open {LETTER[d]} wall of {cell}: border")
+        if cell in self._blocked or other in self._blocked:
+            raise ValueError(
+                f"cannot open {LETTER[d]} wall of {cell}: blocked cell")
         x, y = cell
         nx, ny = other
         self._cells[y][x] &= ~d
