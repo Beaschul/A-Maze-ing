@@ -144,6 +144,83 @@ nunca do módulo `random` global. Mesma seed significa os mesmos sorteios e,
 portanto, o mesmo labirinto. Sem `SEED` no config, uma seed é sorteada e fica
 em `maze.seed`, para dar para reproduzir o labirinto depois.
 
+## Menor caminho
+
+### Busca em largura (BFS)
+
+Para achar o menor caminho da entrada até a saída usamos uma **busca em
+largura** (BFS, *breadth-first search*). A ideia é a de uma gota de tinta
+caindo na entrada e se espalhando pelos corredores:
+
+1. Primeiro a tinta chega em todas as células a **1 passo** da entrada.
+2. Depois em todas a **2 passos**, depois a **3**, e assim por diante.
+3. A primeira vez que a tinta encosta na saída, ela chegou pelo caminho mais
+   curto, porque todas as células mais perto já tinham sido pintadas antes.
+
+Isso funciona porque todo passo custa o mesmo (uma célula). No modo perfeito
+só existe um caminho, então o BFS acha esse. No modo Pac-Man existem vários,
+e o BFS acha um dos mais curtos.
+
+### Fila (`collections.deque`)
+
+O que faz a tinta se espalhar "em camadas" é usar uma **fila**: quem entra
+primeiro sai primeiro, como fila de banco.
+
+- `fila.append(celula)`: coloca no **fim** da fila.
+- `fila.popleft()`: tira do **começo** da fila.
+
+Compare com o backtracker, que usa uma **pilha** (tira do fim, o último que
+entrou). Trocar pilha por fila é exatamente o que muda o algoritmo de "ir o
+mais fundo possível" para "ir camada por camada".
+
+Por que `deque` e não uma lista? Numa lista, `lista.pop(0)` precisa empurrar
+todos os outros elementos uma posição para a esquerda, então fica lento numa
+fila grande. O `deque` (*double-ended queue*) tira do começo sem mexer no
+resto, sempre na mesma velocidade.
+
+```python
+from collections import deque
+
+fila = deque([(0, 0)])
+fila.append((1, 0))   # fila: (0,0) (1,0)
+fila.popleft()        # devolve (0,0); fila: (1,0)
+```
+
+### Reconstruindo o caminho
+
+O BFS não lembra o caminho inteiro de cada célula, só **de onde veio**: ao
+descobrir uma célula nova, guardamos o "pai" dela (a célula de onde chegamos)
+e a direção do passo. Quando chega na saída, é só ir seguindo os pais de trás
+para frente até a entrada e inverter a lista.
+
+### Exemplo no labirinto 3x2
+
+Usando o labirinto do exemplo acima, com entrada `A = (0,0)` e saída
+`B = (2,0)`:
+
+```
++---+---+---+
+| A     | B |
++---+   +   +
+|           |
++---+---+---+
+```
+
+| Passo | Tira da fila | Vizinhos novos (parede aberta) | Fila depois |
+|---|---|---|---|
+| 1 | (0,0) | (1,0) pai (0,0) via E | (1,0) |
+| 2 | (1,0) | (1,1) pai (1,0) via S | (1,1) |
+| 3 | (1,1) | (2,1) via E, (0,1) via W | (2,1) (0,1) |
+| 4 | (2,1) | (2,0) via N | (0,1) (2,0) |
+| 5 | (0,1) | nenhum | (2,0) |
+| 6 | (2,0) | é a saída: para | |
+
+Seguindo os pais a partir da saída: `(2,0) ←N (2,1) ←E (1,1) ←S (1,0) ←E
+(0,0)`. Invertendo: **`ESEN`**.
+
+A ordem da coluna "Tira da fila" é o `search_history`, usado para animar a
+busca.
+
 ## Divisão do trabalho
 
 | Quem | Parte | Issues |
