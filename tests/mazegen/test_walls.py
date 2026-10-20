@@ -1,7 +1,8 @@
 """Tests for the wall grid.
 
 They cover the coherence rule (opening a wall updates both neighbours),
-the closed outer border and the x/y orientation of the grid.
+the closed outer border, the x/y orientation of the grid and the blocked
+cells of the "42" pattern.
 """
 
 import pytest
@@ -73,3 +74,43 @@ def test_check_coherence_detects_one_sided_wall() -> None:
     errors = walls.check_coherence()
     assert len(errors) == 1
     assert "(0, 0) E" in errors[0]
+
+
+def test_is_free() -> None:
+    walls = WallGrid(4, 2)
+    walls.block((2, 1))
+    assert walls.is_free((0, 0))
+    assert not walls.is_free((2, 1))
+    assert not walls.is_free((4, 0))
+    assert not walls.is_free((-1, 0))
+
+
+@pytest.mark.parametrize(
+    ("cell", "direction"),
+    [
+        ((1, 1), Direction.NORTH),  # from the blocked cell
+        ((1, 0), Direction.SOUTH),  # into the blocked cell
+        ((0, 1), Direction.EAST),
+        ((2, 1), Direction.WEST),
+    ],
+)
+def test_open_wall_of_blocked_cell_raises(cell: tuple[int, int],
+                                          direction: Direction) -> None:
+    walls = WallGrid(3, 3)
+    walls.block((1, 1))
+    with pytest.raises(ValueError):
+        walls.open_wall(cell, direction)
+    assert walls.to_lists() == WallGrid(3, 3).to_lists()
+
+
+def test_block_outside_grid_raises() -> None:
+    walls = WallGrid(3, 3)
+    with pytest.raises(ValueError):
+        walls.block((3, 0))
+
+
+def test_block_after_carving_raises() -> None:
+    walls = WallGrid(3, 3)
+    walls.open_wall((0, 0), Direction.EAST)
+    with pytest.raises(ValueError):
+        walls.block((1, 0))

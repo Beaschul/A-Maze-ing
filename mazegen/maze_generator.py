@@ -5,6 +5,8 @@ until its issue is done.
 """
 
 from mazegen.directions import Direction
+from mazegen.errors import MazeError
+from mazegen.pattern import place_pattern
 from mazegen.walls import Cell
 
 
@@ -66,6 +68,11 @@ class MazeGenerator:
         self.exit = exit
         self.perfect = perfect
         self.seed = seed
+        self._pattern: set[Cell] = place_pattern(width, height)
+        if entry in self._pattern:
+            raise MazeError(f"entry {entry} is on the \"42\" pattern")
+        if exit in self._pattern:
+            raise MazeError(f"exit {exit} is on the \"42\" pattern")
         # TODO(#6): draw a seed when None, then create the private
         # random.Random(self.seed) used by the algorithms.
 
@@ -93,7 +100,7 @@ class MazeGenerator:
     @property
     def pattern_cells(self) -> set[Cell]:
         """Cells drawing the "42" (empty if the maze is too small)."""
-        raise NotImplementedError
+        return set(self._pattern)
 
     @property
     def solution(self) -> list[Cell]:
