@@ -56,6 +56,94 @@ Uma chave `KEY=VALUE` por linha. As linhas que começam com `#` são ignoradas.
 | `PERFECT` | sim | labirinto perfeito? | `PERFECT=True` |
 | `SEED` | não | mesma seed = mesmo labirinto | `SEED=42` |
 
+## Algoritmo de geração
+
+### O que é um labirinto perfeito
+
+Pense em cada célula como um ponto e em cada parede aberta como uma ligação
+entre dois pontos. Um labirinto é **perfeito** quando existe **exatamente um
+caminho** entre quaisquer duas células. Isso é o mesmo que dizer que as
+ligações formam uma **árvore**:
+
+- tudo está conectado (dá para chegar em qualquer célula);
+- não há nenhum ciclo (não dá para andar em círculo e voltar ao mesmo lugar).
+
+Uma árvore com `N` células tem sempre `N - 1` ligações. Então, num labirinto
+perfeito, o número de paredes abertas é o número de células livres menos 1
+(os testes verificam exatamente isso).
+
+### Recursive backtracker (busca em profundidade)
+
+É o algoritmo usado (`mazegen/algorithms/backtracker.py`). A ideia é a de
+alguém andando num labirinto com um rolo de barbante:
+
+1. Começa com **todas as paredes fechadas** e fica na célula de entrada.
+2. Olha os vizinhos da célula atual que **ainda não foram visitados**.
+3. Se houver algum, **sorteia um**, abre a parede entre os dois e anda para
+   ele (o barbante vai junto).
+4. Se não houver nenhum (beco sem saída), **volta uma célula** seguindo o
+   barbante e tenta de novo a partir dali.
+5. Termina quando voltou até o início e não sobrou nenhum vizinho novo.
+
+O "barbante" é uma **pilha**: andar para frente empilha a célula, voltar
+desempilha.
+
+#### Exemplo num labirinto 3x2
+
+Numerando as células na ordem em que são visitadas (os sorteios são só um
+exemplo):
+
+| Passo | Célula atual | Vizinhos não visitados | O que acontece | Pilha |
+|---|---|---|---|---|
+| 1 | `1` (0,0) | (1,0), (0,1) | sorteia (1,0), abre a parede | `1 2` |
+| 2 | `2` (1,0) | (2,0), (1,1) | sorteia (1,1), abre a parede | `1 2 3` |
+| 3 | `3` (1,1) | (0,1), (2,1) | sorteia (0,1), abre a parede | `1 2 3 4` |
+| 4 | `4` (0,1) | nenhum | beco sem saída: volta | `1 2 3` |
+| 5 | `3` (1,1) | (2,1) | abre a parede | `1 2 3 5` |
+| 6 | `5` (2,1) | (2,0) | abre a parede | `1 2 3 5 6` |
+| 7 | `6` (2,0) | nenhum | volta... até a pilha esvaziar | vazia |
+
+Resultado: 6 células e 5 paredes abertas (6 - 1), ou seja, uma árvore.
+
+```
++---+---+---+
+| 1   2 | 6 |
++---+   +   +
+| 4   3   5 |
++---+---+---+
+```
+
+#### Por que sempre dá um labirinto perfeito
+
+- **Sem ciclos:** só abre parede para uma célula **não visitada**. Nunca liga
+  duas células que já tinham um caminho entre si.
+- **Tudo conectado:** uma célula só sai da pilha depois que todos os vizinhos
+  dela foram visitados. Quando a pilha esvazia, não sobrou nenhuma célula
+  alcançável sem visitar.
+- **Regra do 3x3:** uma árvore nunca tem um bloco 2x2 aberto (ele seria um
+  ciclo), então nunca aparece uma área aberta 3x3.
+
+#### Por que pilha e não recursão
+
+A versão "de livro" é recursiva, mas o Python para com erro depois de cerca
+de 1000 chamadas aninhadas. Num labirinto grande o caminho chega a milhares
+de células, então a pilha é uma lista comum (`stack.append` / `stack.pop`).
+Um 500x500 gera em cerca de 1 segundo.
+
+#### Por que escolhemos esse algoritmo
+
+- É o mais simples de implementar e de explicar.
+- Gera corredores longos, que ficam bonitos no terminal.
+- A ordem em que as paredes são abertas já é a ordem natural para a animação
+  (`carve_history`).
+
+### Seed
+
+Todo sorteio vem de um `random.Random(seed)` próprio do `MazeGenerator`,
+nunca do módulo `random` global. Mesma seed significa os mesmos sorteios e,
+portanto, o mesmo labirinto. Sem `SEED` no config, uma seed é sorteada e fica
+em `maze.seed`, para dar para reproduzir o labirinto depois.
+
 ## Divisão do trabalho
 
 | Quem | Parte | Issues |
@@ -89,5 +177,5 @@ Uma chave `KEY=VALUE` por linha. As linhas que começam com `#` são ignoradas.
 | Bônus | Descrição | Quem |
 |---|---|---|
 | Zero dead-ends | modo Pac-Man sem nenhum beco sem saída | fsayuri- |
-| Mais algoritmos | escolher o algoritmo de geração (backtracker, Prim, Kruskal) pela chave `ALGORITHM` | aschulz- |
+| Mais algoritmos | escolher o algoritmo de geração (backtracker, Prim, Kruskal) | aschulz- |
 | Animação | animar a construção do labirinto **e** a busca do caminho | aschulz- |
