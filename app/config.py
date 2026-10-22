@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from typing import Final
 
-from mazegen.errors import ConfigError
+from app.errors import ConfigError
 
 
 MAX_DIMENSION: Final[int] = 500

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import sys
 
-from mazegen.config import parse_config
-from mazegen.errors import ConfigError
+from app.config import parse_config
+from app.errors import ConfigError
 
 
 def main(argv: list[str]) -> int:

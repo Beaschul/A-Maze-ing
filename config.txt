@@ -1,0 +1,35 @@
+# ==========================================================================
+#  A-Maze-ing - default configuration
+#  Usage: python3 a_maze_ing.py config.txt
+#
+#  Format: one KEY=VALUE per line. Empty lines and lines starting with '#'
+#  are ignored. Coordinates are written "x,y": x is the column (0 = left)
+#  and y is the row (0 = top).
+# ==========================================================================
+
+# --- Mandatory keys -------------------------------------------------------
+
+# Maze width, in cells (number of columns).
+WIDTH=20
+
+# Maze height, in cells (number of rows).
+HEIGHT=15
+
+# Entry cell "x,y". Must be inside the maze and different from EXIT.
+ENTRY=0,0
+
+# Exit cell "x,y". Here: the bottom-right corner of a 20x15 maze.
+EXIT=19,14
+
+# File where the maze is written, one hexadecimal digit per cell.
+OUTPUT_FILE=maze.txt
+
+# True  -> perfect maze: exactly one path between entry and exit.
+# False -> Pac-Man board: loops, (almost) no dead-ends, open corners/centre.
+PERFECT=True
+
+# --- Optional keys --------------------------------------------------------
+
+# Random seed: the same seed always produces the same maze.
+# Remove this line to get a different maze on every run.
+SEED=42
