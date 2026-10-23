@@ -1,9 +1,10 @@
 
-PYTHON      := python3
-MAIN        := a_maze_ing.py
+VENV        := .venv
+PYTHON      := $(VENV)/bin/python
+MAIN        := app.a_maze_ing
 CONFIG      := config.txt
 PIP         := $(PYTHON) -m pip
-SRC         := mazegen/ a_maze_ing.py
+SRC         := app/ mazegen/ tests/
 
 MYPY_FLAGS  := --warn-return-any \
                --warn-unused-ignores \
@@ -11,19 +12,22 @@ MYPY_FLAGS  := --warn-return-any \
                --disallow-untyped-defs \
                --check-untyped-defs
 
-.PHONY: install run debug clean lint lint-strict test build help
+.PHONY: install run debug clean fclean lint lint-strict test build help
 
+$(PYTHON):
+	python3 -m venv $(VENV)
 
+install: $(PYTHON)
 	$(PIP) install --upgrade pip
-	$(PIP) install flake8 mypy pytest build
+	$(PIP) install -r requirements.txt
 
 
 run:
-	$(PYTHON) $(MAIN) $(CONFIG)
+	$(PYTHON) -m $(MAIN) $(CONFIG)
 
 
 debug:
-	$(PYTHON) -m pdb $(MAIN) $(CONFIG)
+	$(PYTHON) -m pdb -m $(MAIN) $(CONFIG)
 
 
 clean:
@@ -33,13 +37,16 @@ clean:
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	rm -rf build/ dist/ .coverage htmlcov/ 2>/dev/null || true
 
+fclean: clean
+	rm -rf $(VENV)
+
 lint:
-	flake8 .
-	mypy . $(MYPY_FLAGS)
+	$(PYTHON) -m flake8 $(SRC)
+	$(PYTHON) -m mypy $(SRC) $(MYPY_FLAGS)
 
 lint-strict:
-	flake8 .
-	mypy . --strict
+	$(PYTHON) -m flake8 $(SRC)
+	$(PYTHON) -m mypy $(SRC) --strict
 
 test:
 	$(PYTHON) -m pytest -v
@@ -49,10 +56,11 @@ build:
 
 help:
 	@echo "Comandos disponíveis:"
-	@echo "  make install       → instala dependências"
+	@echo "  make install       → cria o .venv e instala dependências"
 	@echo "  make run           → executa o programa"
 	@echo "  make debug         → executa no pdb"
 	@echo "  make clean         → limpa caches e builds"
+	@echo "  make fclean        → clean + apaga o .venv"
 	@echo "  make lint          → flake8 + mypy (flags obrigatórias)"
 	@echo "  make lint-strict   → flake8 + mypy --strict"
 	@echo "  make test          → roda pytest"
