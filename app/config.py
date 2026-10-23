@@ -1,11 +1,15 @@
+"""Configuration parsing for the A-Maze-ing project."""
+
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass
 from typing import Final
 
-from app.errors import ConfigError
+from mazegen.errors import ConfigError
 
+
+# Constants and defaults
 
 MAX_DIMENSION: Final[int] = 500
 """Upper bound for WIDTH/HEIGHT to avoid absurd allocations."""
@@ -23,6 +27,8 @@ OPTIONAL_KEYS: Final[frozenset[str]] = frozenset({
 
 KNOWN_KEYS: Final[frozenset[str]] = MANDATORY_KEYS | OPTIONAL_KEYS
 
+
+# Dataclass
 
 @dataclass(frozen=True)
 class MazeConfig:
@@ -47,6 +53,8 @@ class MazeConfig:
     seed: int | None = None
 
 
+# Public API
+
 def parse_config(path: str) -> MazeConfig:
     """Read and validate a configuration file.
 
@@ -63,6 +71,8 @@ def parse_config(path: str) -> MazeConfig:
     raw = _read_lines(path)
     return _build_config(raw, config_path=path)
 
+
+# Internals
 
 def _read_lines(path: str) -> list[tuple[int, str]]:
     """Return (line_number, stripped_line) for meaningful lines.

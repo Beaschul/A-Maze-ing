@@ -1,77 +1,59 @@
-PYTHON       := python3
-VENV         := .venv
-VENV_PYTHON  := $(VENV)/bin/python
-VENV_PIP     := $(VENV)/bin/pip
-VENV_FLAKE8  := $(VENV)/bin/flake8
-VENV_MYPY    := $(VENV)/bin/mypy
 
-APP          := a_maze_ing.py
-CONFIG       ?= config.txt
-WHL          := dist/mazegen-1.0.0-py3-none-any.whl
+PYTHON      := python3
+MAIN        := a_maze_ing.py
+CONFIG      := config.txt
+PIP         := $(PYTHON) -m pip
+SRC         := mazegen/ a_maze_ing.py
 
-MYPY_FLAGS   := --warn-return-any \
-                --warn-unused-ignores \
-                --ignore-missing-imports \
-                --disallow-untyped-defs \
-                --check-untyped-defs
+MYPY_FLAGS  := --warn-return-any \
+               --warn-unused-ignores \
+               --ignore-missing-imports \
+               --disallow-untyped-defs \
+               --check-untyped-defs
 
-.PHONY: all install run debug clean fclean lint lint-strict test build help
+.PHONY: install run debug clean lint lint-strict test build help
 
 
-all: help
+	$(PIP) install --upgrade pip
+	$(PIP) install flake8 mypy pytest build
 
 
-$(VENV):
-	$(PYTHON) -m venv $(VENV)
-	$(VENV_PIP) install --upgrade pip
+run:
+	$(PYTHON) $(MAIN) $(CONFIG)
 
 
-install: $(VENV)
-	$(VENV_PIP) install flake8 mypy pytest build
-
-
-build: install
-	$(VENV_PYTHON) -m build
-	$(VENV_PIP) install --force-reinstall $(WHL)
-
-
-run: install
-	$(VENV_PYTHON) $(APP) $(CONFIG)
-
-debug: install
-	$(VENV_PYTHON) -m pdb $(APP) $(CONFIG)
-
-
-lint: install
-	$(VENV_FLAKE8) .
-	$(VENV_MYPY) . $(MYPY_FLAGS)
-
-lint-strict: install
-	$(VENV_FLAKE8) .
-	$(VENV_MYPY) . --strict
-
-
-test: install
-	$(VENV_PYTHON) -m pytest -v
+debug:
+	$(PYTHON) -m pdb $(MAIN) $(CONFIG)
 
 
 clean:
-	$(VENV_PYTHON) -c "import shutil, pathlib; \
-[shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').rglob('__pycache__')]; \
-[shutil.rmtree(p, ignore_errors=True) for p in ['.mypy_cache', '.pytest_cache', 'build', 'dist']]"
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	rm -rf build/ dist/ .coverage htmlcov/ 2>/dev/null || true
 
-fclean: clean
-	rm -rf $(VENV)
+lint:
+	flake8 .
+	mypy . $(MYPY_FLAGS)
 
+lint-strict:
+	flake8 .
+	mypy . --strict
+
+test:
+	$(PYTHON) -m pytest -v
+
+build:
+	$(PYTHON) -m build
 
 help:
 	@echo "Comandos disponíveis:"
-	@echo "  make install       → cria .venv e instala dependências de dev"
-	@echo "  make build         → gera .whl/.tar.gz e instala o pacote"
-	@echo "  make run           → executa o programa (CONFIG=config.txt)"
+	@echo "  make install       → instala dependências"
+	@echo "  make run           → executa o programa"
 	@echo "  make debug         → executa no pdb"
-	@echo "  make lint          → flake8 . + mypy . (flags obrigatórias)"
-	@echo "  make lint-strict   → flake8 . + mypy . --strict"
-	@echo "  make test          → pytest"
-	@echo "  make clean         → remove caches/build"
-	@echo "  make fclean        → clean + remove .venv"
+	@echo "  make clean         → limpa caches e builds"
+	@echo "  make lint          → flake8 + mypy (flags obrigatórias)"
+	@echo "  make lint-strict   → flake8 + mypy --strict"
+	@echo "  make test          → roda pytest"
+	@echo "  make build         → gera .whl e .tar.gz"

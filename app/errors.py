@@ -1,3 +1,6 @@
+"""Custom exceptions for the maze generator."""
+
+
 class ConfigError(Exception):
     """Raised when a configuration file is invalid.
 
