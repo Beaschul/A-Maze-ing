@@ -24,14 +24,14 @@ def main(argv: list[str]) -> int:
         print("Usage: python3 a_maze_ing.py config.txt", file=sys.stderr)
         return 1
 
-    # 1. Ler e validar o config
+    # 1. Parse and validate the config file
     try:
         config = parse_config(argv[0])
     except ConfigError as exc:
         print(f"ConfigError: {exc}", file=sys.stderr)
         return 1
 
-    # 2. Gerar o labirinto
+    # 2. Generate the maze
     try:
         maze = MazeGenerator(
             width=config.width,
@@ -49,17 +49,15 @@ def main(argv: list[str]) -> int:
         print(f"Unexpected generation error: {exc}", file=sys.stderr)
         return 1
 
-    # 3. Escrever o arquivo de saída (Task #9)
+    # 3. Write the output file
     try:
-        # Como o seu MazeGenerator tem a propriedade .grid (list[list[int]]),
-        # precisamos converter para hexadecimal.
-        # O seu gerador usa a convenção: N=1, E=2, S=4, W=8.
-        # O subject pede exatamente isso!
+        # Each cell is a wall bitmask (N=1, E=2, S=4, W=8), which is the
+        # encoding the subject expects, so one hex digit per cell suffices.
         hex_rows = [
-            "".join(f"{cell:x}" for cell in row) 
+            "".join(f"{cell:x}" for cell in row)
             for row in maze.grid
         ]
-        
+
         write_output(
             path=config.output_file,
             hex_rows=hex_rows,

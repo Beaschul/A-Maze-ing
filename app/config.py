@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Final
 
-from mazegen.errors import ConfigError
+from app.errors import ConfigError
 
 
 # Constants and defaults
