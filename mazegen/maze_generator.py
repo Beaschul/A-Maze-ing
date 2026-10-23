@@ -1,14 +1,16 @@
 """MazeGenerator: the interface between the core and the application.
 
 ``generate()`` blocks the "42" pattern, carves the maze with the chosen
-algorithm and finds the shortest path (:mod:`mazegen.solver`). The
-application only reads the results through the properties.
+algorithm, adds loops in Pac-Man mode (:mod:`mazegen.braid`) and finds the
+shortest path (:mod:`mazegen.solver`). The application only reads the
+results through the properties.
 """
 
 import random
 import secrets
 
 from mazegen.algorithms import DEFAULT_ALGORITHM, get_carver
+from mazegen.braid import braid
 from mazegen.directions import Direction
 from mazegen.errors import MazeError
 from mazegen.pattern import place_pattern
@@ -107,7 +109,8 @@ class MazeGenerator:
         for cell in self._pattern:
             walls.block(cell)
         self._carve_history = self._carve(walls, rng, self.entry)
-        # TODO(#12): open loops when perfect is False.
+        if not self.perfect:
+            self._carve_history += braid(walls, rng)
         self._solution = solve(walls, self.entry, self.exit)
         self._walls = walls
 

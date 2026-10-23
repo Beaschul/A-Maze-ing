@@ -23,3 +23,6 @@ PATTERN_MIN_WIDTH: int = len(PATTERN_42[0]) + 2 * PATTERN_MARGIN
 
 PATTERN_MIN_HEIGHT: int = len(PATTERN_42) + 2 * PATTERN_MARGIN
 """Smallest HEIGHT that fits the "42" pattern plus its margin."""
+
+MIN_LOOPS: int = 2
+"""Independent loops a Pac-Man board (PERFECT=False) must have at least."""
