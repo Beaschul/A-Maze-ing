@@ -55,13 +55,13 @@ build:
 	$(PYTHON) -m build
 
 help:
-	@echo "Comandos disponíveis:"
-	@echo "  make install       → cria o .venv e instala dependências"
-	@echo "  make run           → executa o programa"
-	@echo "  make debug         → executa no pdb"
-	@echo "  make clean         → limpa caches e builds"
-	@echo "  make fclean        → clean + apaga o .venv"
-	@echo "  make lint          → flake8 + mypy (flags obrigatórias)"
-	@echo "  make lint-strict   → flake8 + mypy --strict"
-	@echo "  make test          → roda pytest"
-	@echo "  make build         → gera .whl e .tar.gz"
+	@echo "Available targets:"
+	@echo "  make install       create .venv and install dependencies"
+	@echo "  make run           run the program with $(CONFIG)"
+	@echo "  make debug         run the program under pdb"
+	@echo "  make clean         remove caches and build artifacts"
+	@echo "  make fclean        clean, then remove .venv"
+	@echo "  make lint          flake8 + mypy (subject's required flags)"
+	@echo "  make lint-strict   flake8 + mypy --strict"
+	@echo "  make test          run the test suite with pytest"
+	@echo "  make build         build the .whl and .tar.gz packages"
