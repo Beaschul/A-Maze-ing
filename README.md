@@ -48,11 +48,31 @@ make run
 | `make lint` | `flake8` + `mypy` com as flags do subject |
 | `make lint-strict` | `flake8` + `mypy --strict` |
 | `make test` | roda os testes com `pytest` |
+| `make test-analyzer` | roda o `maze_analyzer` em todos os configs de teste, 50 seeds cada |
+| `make check` | `make test` + `make test-analyzer`: mostra tudo o que falhou |
 | `make build` | gera o pacote `mazegen` (`.whl` e `.tar.gz`) |
 
-`lint`, `lint-strict`, `test` e `build` instalam as dependências sozinhos se
-a `.venv` ainda não tiver elas (ou se o `requirements.txt` mudar). Para usar
-outro arquivo de configuração: `make run CONFIG=outro.txt`.
+`lint`, `lint-strict`, `test`, `test-analyzer` e `build` instalam as
+dependências sozinhos se a `.venv` ainda não tiver elas (ou se o
+`requirements.txt` mudar). Para usar outro arquivo de configuração:
+`make run CONFIG=outro.txt`.
+
+### Bateria do analyzer
+
+`tools/run_analyzer.py` gera um labirinto para cada arquivo de
+`tests/configs_valid/` e cada seed (trocando `SEED` e `OUTPUT_FILE`) e confere:
+
+- o veredito do `tools/maze_analyzer.py`: `PERFECT maze` com `PERFECT=True`
+  (paredes coerentes, tudo conectado, nenhum ciclo) e `Pac-Man-USABLE` com
+  `PERFECT=False` (pelo menos 2 rotas independentes, no máximo 2 dead-ends
+  reais, cantos e centro alcançáveis);
+- o caminho do rodapé: sai da entrada, não atravessa parede, chega na saída e
+  é o mais curto;
+- o "42": desenhado quando cabe (9x7 ou maior), ausente quando não cabe.
+
+Um config que começa com `# EXPECT_ERROR: <texto>` precisa ser recusado com
+uma mensagem que contenha `<texto>`. Para rodar só alguns configs:
+`python3 tools/run_analyzer.py --seeds 5 tests/configs_valid/3x3_perfect.txt`.
 
 ### Arquivo de configuração
 
