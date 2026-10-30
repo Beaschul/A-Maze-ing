@@ -1,0 +1,7 @@
+# EXPECT_ERROR: too small for a Pac-Man board
+WIDTH=2
+HEIGHT=2
+ENTRY=0,0
+EXIT=1,1
+OUTPUT_FILE=maze.txt
+PERFECT=False

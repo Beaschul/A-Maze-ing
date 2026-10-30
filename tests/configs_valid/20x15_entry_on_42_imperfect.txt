@@ -1,0 +1,7 @@
+# EXPECT_ERROR: is on the "42" pattern
+WIDTH=20
+HEIGHT=15
+ENTRY=10,7
+EXIT=0,0
+OUTPUT_FILE=maze.txt
+PERFECT=False

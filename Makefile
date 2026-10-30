@@ -12,7 +12,8 @@ MYPY_FLAGS  := --warn-return-any \
                --disallow-untyped-defs \
                --check-untyped-defs
 
-.PHONY: install run debug clean fclean lint lint-strict test build help
+.PHONY: install run debug clean fclean lint lint-strict test test-analyzer \
+        check build help
 
 $(PYTHON):
 	python3 -m venv $(VENV)
@@ -54,6 +55,11 @@ lint-strict: $(DEPS)
 test: $(DEPS)
 	$(PYTHON) -m pytest -v
 
+test-analyzer: $(DEPS)
+	$(PYTHON) tools/run_analyzer.py
+
+check: test test-analyzer
+
 build: $(DEPS)
 	$(PYTHON) -m build
 
@@ -67,4 +73,6 @@ help:
 	@echo "  make lint          flake8 + mypy (subject's required flags)"
 	@echo "  make lint-strict   flake8 + mypy --strict"
 	@echo "  make test          run the test suite with pytest"
+	@echo "  make test-analyzer run maze_analyzer on every test config, 50 seeds"
+	@echo "  make check         make test + make test-analyzer"
 	@echo "  make build         build the .whl and .tar.gz packages"
