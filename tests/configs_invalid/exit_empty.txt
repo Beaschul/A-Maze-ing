@@ -1,0 +1,7 @@
+# EXIT has no value.
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=
+OUTPUT_FILE=maze.txt
+PERFECT=True

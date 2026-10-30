@@ -1,0 +1,7 @@
+# WIDTH is above the maximum (500).
+WIDTH=100000
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=maze.txt
+PERFECT=True

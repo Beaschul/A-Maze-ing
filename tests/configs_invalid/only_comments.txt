@@ -1,0 +1,2 @@
+# Only comments: every mandatory key is missing.
+# WIDTH=20

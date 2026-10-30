@@ -1,0 +1,7 @@
+# OUTPUT_FILE would overwrite this config file.
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=output_file_is_config.txt
+PERFECT=True

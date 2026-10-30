@@ -1,0 +1,7 @@
+# ENTRY has a non-integer coordinate.
+WIDTH=20
+HEIGHT=15
+ENTRY=a,0
+EXIT=19,14
+OUTPUT_FILE=maze.txt
+PERFECT=True
