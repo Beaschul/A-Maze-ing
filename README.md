@@ -31,16 +31,28 @@ python3 a_maze_ing.py config.txt
 python3 -m pytest
 ```
 
-Quando o Makefile estiver pronto (#3), os atalhos serão:
+Ou, com o Makefile (não precisa ativar a venv):
+
+```bash
+make install
+make run
+```
 
 | Comando | O que faz |
 |---|---|
-| `make install` | instala as dependências |
-| `make run` | roda o programa com o `config.txt` |
+| `make install` | cria a `.venv` e instala as dependências do `requirements.txt` |
+| `make run` | roda `a_maze_ing.py` com o `config.txt` |
 | `make debug` | roda com o `pdb` |
-| `make clean` | apaga caches (`__pycache__`, `.mypy_cache`...) |
+| `make clean` | apaga caches (`__pycache__`, `.mypy_cache`...) e artefatos de build |
+| `make fclean` | `make clean` e apaga a `.venv` |
 | `make lint` | `flake8` + `mypy` com as flags do subject |
 | `make lint-strict` | `flake8` + `mypy --strict` |
+| `make test` | roda os testes com `pytest` |
+| `make build` | gera o pacote `mazegen` (`.whl` e `.tar.gz`) |
+
+`lint`, `lint-strict`, `test` e `build` instalam as dependências sozinhos se
+a `.venv` ainda não tiver elas (ou se o `requirements.txt` mudar). Para usar
+outro arquivo de configuração: `make run CONFIG=outro.txt`.
 
 ### Arquivo de configuração
 

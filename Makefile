@@ -1,10 +1,10 @@
 
 VENV        := .venv
 PYTHON      := $(VENV)/bin/python
-MAIN        := app.a_maze_ing
+MAIN        := a_maze_ing.py
 CONFIG      := config.txt
 PIP         := $(PYTHON) -m pip
-SRC         := app/ mazegen/ tests/
+DEPS        := $(VENV)/.deps-installed
 
 MYPY_FLAGS  := --warn-return-any \
                --warn-unused-ignores \
@@ -17,17 +17,20 @@ MYPY_FLAGS  := --warn-return-any \
 $(PYTHON):
 	python3 -m venv $(VENV)
 
-install: $(PYTHON)
+$(DEPS): requirements.txt | $(PYTHON)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
+	touch $(DEPS)
+
+install: $(DEPS)
 
 
 run:
-	$(PYTHON) -m $(MAIN) $(CONFIG)
+	$(PYTHON) $(MAIN) $(CONFIG)
 
 
 debug:
-	$(PYTHON) -m pdb -m $(MAIN) $(CONFIG)
+	$(PYTHON) -m pdb $(MAIN) $(CONFIG)
 
 
 clean:
@@ -40,18 +43,18 @@ clean:
 fclean: clean
 	rm -rf $(VENV)
 
-lint:
-	$(PYTHON) -m flake8 $(SRC)
-	$(PYTHON) -m mypy $(SRC) $(MYPY_FLAGS)
+lint: $(DEPS)
+	$(PYTHON) -m flake8 .
+	$(PYTHON) -m mypy . $(MYPY_FLAGS)
 
-lint-strict:
-	$(PYTHON) -m flake8 $(SRC)
-	$(PYTHON) -m mypy $(SRC) --strict
+lint-strict: $(DEPS)
+	$(PYTHON) -m flake8 .
+	$(PYTHON) -m mypy . --strict
 
-test:
+test: $(DEPS)
 	$(PYTHON) -m pytest -v
 
-build:
+build: $(DEPS)
 	$(PYTHON) -m build
 
 help:

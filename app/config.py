@@ -148,12 +148,14 @@ def _build_config(
     if width < MIN_DIMENSION or height < MIN_DIMENSION:
         raise ConfigError(
             f"WIDTH and HEIGHT must be >= {MIN_DIMENSION}",
-            line=values["WIDTH"][0] if width < MIN_DIMENSION else values["HEIGHT"][0],
+            line=values["WIDTH"][0] if width <
+            MIN_DIMENSION else values["HEIGHT"][0],
         )
     if width > MAX_DIMENSION or height > MAX_DIMENSION:
         raise ConfigError(
             f"WIDTH and HEIGHT must be <= {MAX_DIMENSION}",
-            line=values["WIDTH"][0] if width > MAX_DIMENSION else values["HEIGHT"][0],
+            line=values["WIDTH"][0] if width > MAX_DIMENSION
+            else values["HEIGHT"][0],
         )
 
     entry = _parse_coord(values, "ENTRY", width, height)
