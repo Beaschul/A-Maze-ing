@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 from typing import Final
 
@@ -26,6 +27,9 @@ OPTIONAL_KEYS: Final[frozenset[str]] = frozenset({
 })
 
 KNOWN_KEYS: Final[frozenset[str]] = MANDATORY_KEYS | OPTIONAL_KEYS
+
+MAX_SHOWN_VALUE: Final[int] = 30
+"""Longest value quoted in an error message before it is cut."""
 
 
 # Dataclass
@@ -88,7 +92,8 @@ def _read_lines(path: str) -> list[tuple[int, str]]:
         ConfigError: On any file-related error or encoding problem.
     """
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        # "utf-8-sig" also accepts files saved with a BOM (Windows editors).
+        with open(path, "r", encoding="utf-8-sig") as f:
             raw_lines = f.readlines()
     except FileNotFoundError as exc:
         raise ConfigError(f"configuration file not found: {path!r}") from exc
@@ -115,13 +120,26 @@ def _read_lines(path: str) -> list[tuple[int, str]]:
 def _build_config(
     raw: list[tuple[int, str]], config_path: str
 ) -> MazeConfig:
-    """Turn raw (line_no, text) pairs into a validated MazeConfig."""
+    """Turn raw (line_no, text) pairs into a validated MazeConfig.
+
+    Args:
+        raw: Meaningful lines as (1-based line number, stripped text).
+        config_path: Path of the configuration file, so OUTPUT_FILE
+            cannot overwrite it.
+
+    Returns:
+        The validated configuration.
+
+    Raises:
+        ConfigError: On syntax errors, missing or duplicate keys, or
+            invalid values.
+    """
     values: dict[str, tuple[int, str]] = {}
 
     for line_no, text in raw:
         if "=" not in text:
             raise ConfigError(
-                f"missing '=' in line: {text!r}", line=line_no
+                f"missing '=' in line: {_shorten(text)}", line=line_no
             )
         key, _, value = text.partition("=")
         key = key.strip()
@@ -130,7 +148,11 @@ def _build_config(
         if not key:
             raise ConfigError("empty key before '='", line=line_no)
         if key not in KNOWN_KEYS:
-            print(f"warning: unknown key {key!r} (line {line_no})")
+            print(
+                f"warning: line {line_no}: unknown key {_shorten(key)}"
+                " (ignored)",
+                file=sys.stderr,
+            )
             continue
         if key in values:
             raise ConfigError(
@@ -192,7 +214,29 @@ def _build_config(
     )
 
 
+def _shorten(raw: str) -> str:
+    """Quote a value for an error message, cutting it if it is too long.
+
+    Args:
+        raw: The value as written in the configuration file.
+
+    Returns:
+        The quoted value, ending with "..." when it was cut.
+    """
+    if len(raw) <= MAX_SHOWN_VALUE:
+        return repr(raw)
+    return repr(raw[:MAX_SHOWN_VALUE]) + "..."
+
+
 def _check_mandatory(values: dict[str, tuple[int, str]]) -> None:
+    """Make sure every mandatory key was given.
+
+    Args:
+        values: Parsed keys mapped to (line number, raw value).
+
+    Raises:
+        ConfigError: If at least one mandatory key is missing.
+    """
     missing = MANDATORY_KEYS - values.keys()
     if missing:
         pretty = ", ".join(sorted(missing))
@@ -200,24 +244,60 @@ def _check_mandatory(values: dict[str, tuple[int, str]]) -> None:
 
 
 def _parse_int(values: dict[str, tuple[int, str]], key: str) -> int:
+    """Convert the value of ``key`` to an integer.
+
+    Args:
+        values: Parsed keys mapped to (line number, raw value).
+        key: The key to convert; it must be present in ``values``.
+
+    Returns:
+        The integer value.
+
+    Raises:
+        ConfigError: If the value is not an integer.
+    """
     line_no, raw = values[key]
     try:
         return int(raw)
     except ValueError as exc:
         raise ConfigError(
-            f"{key} must be an integer, got {raw!r}", line=line_no
+            f"{key} must be an integer, got {_shorten(raw)}", line=line_no
         ) from exc
 
 
 def _parse_optional_int(
     values: dict[str, tuple[int, str]], key: str
 ) -> int | None:
+    """Convert the value of an optional key to an integer.
+
+    Args:
+        values: Parsed keys mapped to (line number, raw value).
+        key: The optional key to convert.
+
+    Returns:
+        The integer value, or None if the key was not given.
+
+    Raises:
+        ConfigError: If the key is present but not an integer.
+    """
     if key not in values:
         return None
     return _parse_int(values, key)
 
 
 def _parse_bool(values: dict[str, tuple[int, str]], key: str) -> bool:
+    """Convert the value of ``key`` to a boolean (case-insensitive).
+
+    Args:
+        values: Parsed keys mapped to (line number, raw value).
+        key: The key to convert; it must be present in ``values``.
+
+    Returns:
+        True for "true", False for "false", in any letter case.
+
+    Raises:
+        ConfigError: If the value is neither true nor false.
+    """
     line_no, raw = values[key]
     lowered = raw.lower()
     if lowered == "true":
@@ -225,7 +305,7 @@ def _parse_bool(values: dict[str, tuple[int, str]], key: str) -> bool:
     if lowered == "false":
         return False
     raise ConfigError(
-        f"{key} must be True or False, got {raw!r}", line=line_no
+        f"{key} must be True or False, got {_shorten(raw)}", line=line_no
     )
 
 
@@ -235,18 +315,34 @@ def _parse_coord(
     width: int,
     height: int,
 ) -> tuple[int, int]:
+    """Convert an "x,y" value to a cell inside the grid.
+
+    Args:
+        values: Parsed keys mapped to (line number, raw value).
+        key: The key to convert ("ENTRY" or "EXIT").
+        width: Maze width, in cells.
+        height: Maze height, in cells.
+
+    Returns:
+        The (x, y) coordinates.
+
+    Raises:
+        ConfigError: If the format is wrong, the coordinates are not
+            integers, or the cell is outside the grid.
+    """
     line_no, raw = values[key]
     parts = raw.split(",")
     if len(parts) != 2:
         raise ConfigError(
-            f"{key} must be in 'x,y' format, got {raw!r}", line=line_no
+            f"{key} must be in 'x,y' format, got {_shorten(raw)}", line=line_no
         )
     try:
         x = int(parts[0].strip())
         y = int(parts[1].strip())
     except ValueError as exc:
         raise ConfigError(
-            f"{key} coordinates must be integers, got {raw!r}", line=line_no
+            f"{key} coordinates must be integers, got {_shorten(raw)}",
+            line=line_no,
         ) from exc
     if not (0 <= x < width and 0 <= y < height):
         raise ConfigError(

@@ -68,6 +68,25 @@ Uma chave `KEY=VALUE` por linha. As linhas que começam com `#` são ignoradas.
 | `PERFECT` | sim | labirinto perfeito? | `PERFECT=True` |
 | `SEED` | não | mesma seed = mesmo labirinto | `SEED=42` |
 
+Regras de leitura:
+
+- As chaves diferenciam maiúsculas de minúsculas: `width=20` não vale como
+  `WIDTH`.
+- Espaços em volta do `=` e no começo/fim da linha são ignorados
+  (`WIDTH = 20` funciona).
+- A linha é separada no primeiro `=`; linha sem `=` é erro.
+- Chave repetida é erro. Chave desconhecida só gera um aviso e é ignorada.
+- `WIDTH` e `HEIGHT` são inteiros entre 2 e 500.
+- `ENTRY` e `EXIT` ficam dentro do grid e são células diferentes.
+- `PERFECT` aceita `True` ou `False`, em maiúsculas ou minúsculas.
+- `OUTPUT_FILE` não pode ser vazio nem ser o próprio arquivo de configuração.
+- Arquivos salvos com BOM (comum no Windows) são aceitos.
+
+Qualquer erro mostra uma mensagem `ConfigError: ...`, com o número da linha
+quando ele existe, e o programa sai com código 1. Há um exemplo de cada erro
+em [`tests/configs_invalid/`](tests/configs_invalid/), testados em
+`tests/app/test_config.py`.
+
 ## Algoritmo de geração
 
 ### O que é um labirinto perfeito

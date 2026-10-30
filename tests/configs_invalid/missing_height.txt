@@ -1,0 +1,6 @@
+# HEIGHT is missing.
+WIDTH=20
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=maze.txt
+PERFECT=True

@@ -1,0 +1,7 @@
+# EXIT is outside the 20x15 grid.
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,15
+OUTPUT_FILE=maze.txt
+PERFECT=True
