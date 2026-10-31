@@ -57,6 +57,16 @@ dependências sozinhos se a `.venv` ainda não tiver elas (ou se o
 `requirements.txt` mudar). Para usar outro arquivo de configuração:
 `make run CONFIG=outro.txt`.
 
+### Build do pacote `mazegen`
+
+```bash
+make build    # gera mazegen-1.0.0-py3-none-any.whl e mazegen-1.0.0.tar.gz na raiz
+pip install mazegen-1.0.0-py3-none-any.whl
+```
+
+O `.whl` e o `.tar.gz` já ficam versionados na raiz do repositório. Só o
+pacote `mazegen/` entra neles: `app/`, `tests/` e `tools/` ficam de fora.
+
 ### Bateria do analyzer
 
 `tools/run_analyzer.py` gera um labirinto para cada arquivo de
@@ -303,38 +313,124 @@ Seguindo os pais a partir da saída: `(2,0) ←N (2,1) ←E (1,1) ←S (1,0) ←
 A ordem da coluna "Tira da fila" é o `search_history`, usado para animar a
 busca.
 
+## Parte reutilizável: o pacote `mazegen`
+
+Tudo o que gera e resolve o labirinto fica em `mazegen/`, sem depender do
+`app/`: o pacote não imprime nada, não lê entrada e não chama `exit()`. Todo
+problema vira uma `MazeError`. Só usa a biblioteca padrão e é totalmente
+tipado (`py.typed`).
+
+### Instanciar e passar parâmetros
+
+```python
+from mazegen import Direction, MazeError, MazeGenerator
+
+maze = MazeGenerator(
+    20, 15,                # largura e altura (2 a 500)
+    entry=(0, 0),          # (x, y): x = coluna, y = linha
+    exit=(19, 14),
+    perfect=True,          # False = tabuleiro Pac-Man
+    seed=42,               # opcional: sem seed, uma é sorteada
+)
+maze.generate()
+```
+
+### Acessar a estrutura e a solução
+
+```python
+maze.seed                                # 42 (ou a seed sorteada)
+maze.grid                                # grid[y][x]: máscara de 4 bits por célula
+maze.has_wall((0, 0), Direction.NORTH)   # True
+maze.pattern_cells                       # células do "42" (sempre fechadas)
+maze.solution                            # [(0, 0), (1, 0), ...] da entrada à saída
+maze.solution_directions                 # "EESEN..."
+maze.carve_history                       # paredes abertas, em ordem (animação)
+maze.search_history                      # células visitadas pelo BFS, em ordem
+
+try:
+    MazeGenerator(20, 15, entry=(0, 0), exit=(20, 0))
+except MazeError as err:
+    print(err)  # exit (20, 0) is outside the 20x15 maze
+```
+
+Bits das paredes: `NORTH = 1`, `EAST = 2`, `SOUTH = 4`, `WEST = 8`; bit ligado
+= parede fechada. Uma instância = um labirinto: para outro labirinto, crie
+outro `MazeGenerator`. Mais detalhes (e como escrever o arquivo de saída) em
+[`mazegen/README.md`](mazegen/README.md).
+
 ## Divisão do trabalho
 
-| Quem | Parte | Issues |
-|---|---|---|
-| **fsayuri-** | **Core (`mazegen/`)**: estrutura do repo, modelo de paredes, padrão 42, algoritmo de geração + seed, menor caminho, modo Pac-Man e empacotamento
-| **aschulz-** | **App (`app/`)**: Makefile, parser do config, arquivo de saída, `a_maze_ing.py`, validador, render no terminal, menu, lint e README/LICENSE
-| **As duas** | Interface do `MazeGenerator` (contrato core ↔ app), bateria de testes e lint final
+| Quem | Parte |
+|---|---|
+| **fsayuri-** | **Core (`mazegen/`)**: estrutura do repo, interface pública, modelo de paredes, padrão 42, algoritmo de geração + seed, menor caminho, modo Pac-Man, validador interno e empacotamento |
+| **aschulz-** | **App (`app/`)**: Makefile, parser do config, arquivo de saída, `a_maze_ing.py`, bateria do analyzer, render no terminal, menu, lint e README/LICENSE |
+| **As duas** | Interface do `MazeGenerator` (contrato core ↔ app), revisão dos PRs e testes | 
+
+## Ferramentas
+
+- **Python 3.10+**, só com a biblioteca padrão no código do projeto.
+- **venv** + **Makefile** para instalar, rodar, testar e gerar o pacote.
+- **flake8** e **mypy** (flags do subject e `--strict`).
+- **pytest** para os testes e `tools/maze_analyzer.py` /
+  `tools/run_analyzer.py` para validar labirintos gerados.
+- **build** + **setuptools** para gerar o `.whl` e o `.tar.gz`.
+- **Git** e **GitHub** (issues, milestones e pull requests).
+- **VS Code** com **Claude Code** (ver Recursos).
+
+## Recursos
+
+- [Maze generation algorithm (Wikipedia)](https://en.wikipedia.org/wiki/Maze_generation_algorithm):
+  recursive backtracker, Prim, Kruskal.
+- [Think Labyrinth! (Walter D. Pullen)](https://www.astrolog.org/labyrnth/algrithm.htm):
+  classificação de labirintos, labirintos perfeitos e *braid* (sem becos).
+- Jamis Buck, [Maze Generation: Recursive Backtracking](https://weblog.jamisbuck.org/2010/12/27/maze-generation-recursive-backtracking)
+  e o livro *Mazes for Programmers*.
+- [Breadth-first search (Wikipedia)](https://en.wikipedia.org/wiki/Breadth-first_search).
+- Documentação do Python: [`random`](https://docs.python.org/3/library/random.html),
+  [`collections.deque`](https://docs.python.org/3/library/collections.html#collections.deque),
+  [`typing`](https://docs.python.org/3/library/typing.html).
+- [Python Packaging User Guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
+  para o `pyproject.toml` e o build do pacote.
+- [choosealicense.com](https://choosealicense.com/) para escolher a licença.
+
+### Uso de IA
+
+Usamos o **Claude Code** (Anthropic) como assistente durante o projeto:
+
+- **Planejamento:** ajudar a quebrar o subject em milestones e issues.
+- **Explicação de conceitos:** labirinto perfeito como árvore, backtracker
+  com pilha x recursão, BFS com `deque`, *braid*.
+- **Testes:** sugerir casos de borda para o parser do config (os arquivos de
+  `tests/configs_invalid/`) e para o gerador.
+- **Revisão e lint:** encontrar erros de `flake8` / `mypy` e revisar PRs.
+- **Documentação:** rascunho de docstrings, deste README e do `LICENSE.md`.
+
+Todo código sugerido foi lido, entendido e testado por nós antes de entrar
+no repositório; as decisões de design (contrato do `MazeGenerator`,
+algoritmo, formato do config) foram nossas.
 
 ## Parte obrigatória
 
-- [ ] Ler e validar o arquivo de configuração, com mensagens de erro claras
-- [ ] Gerar um labirinto aleatório e reprodutível pela seed
-- [ ] Paredes coerentes entre vizinhos e bordas externas fechadas
-- [ ] Todas as células alcançáveis (exceto as do "42")
-- [ ] Nenhuma área aberta maior que 2 células de largura (sem 3x3 aberto)
-- [ ] Desenhar um "42" com células totalmente fechadas (com mensagem de erro se não couber)
-- [ ] `PERFECT=True`: exatamente um caminho entre entrada e saída
-- [ ] `PERFECT=False`: tabuleiro estilo Pac-Man (conectado, com cantos e centro abertos, pelo menos 2 loops e poucos becos sem saída)
-- [ ] Arquivo de saída em hexadecimal, com entrada, saída e menor caminho (`N/E/S/W`)
-- [ ] Visualização no terminal com paredes, entrada, saída e caminho
+- [x] Ler e validar o arquivo de configuração, com mensagens de erro claras
+- [x] Gerar um labirinto aleatório e reprodutível pela seed
+- [x] Paredes coerentes entre vizinhos e bordas externas fechadas
+- [x] Todas as células alcançáveis (exceto as do "42")
+- [x] Nenhuma área aberta maior que 2 células de largura (sem 3x3 aberto)
+- [x] Desenhar um "42" com células totalmente fechadas (com mensagem de erro se não couber)
+- [x] `PERFECT=True`: exatamente um caminho entre entrada e saída
+- [x] `PERFECT=False`: tabuleiro estilo Pac-Man (conectado, com cantos e centro abertos, pelo menos 2 loops e poucos becos sem saída)
+- [x] Arquivo de saída em hexadecimal, com entrada, saída e menor caminho (`N/E/S/W`)
+- [x] Visualização no terminal com paredes, entrada, saída e caminho
 - [x] Menu: gerar outro labirinto, mostrar/esconder o caminho, mudar a cor das paredes
-- [ ] Pacote `mazegen-*.whl` na raiz e `LICENSE.md`
-- [ ] `flake8` e `mypy` sem erros
+- [x] Pacote `mazegen-*.whl` na raiz e `LICENSE.md`
+- [x] `flake8` e `mypy` sem erros
 
----
+## Licença
 
-## Bônus (opcional)
-
-> Esta seção é independente da parte obrigatória. S
-
-| Bônus | Descrição | Quem |
-|---|---|---|
-| Zero dead-ends | modo Pac-Man sem nenhum beco sem saída | fsayuri- |
-| Mais algoritmos | escolher o algoritmo de geração (backtracker, Prim, Kruskal) | aschulz- |
-| Animação | animar a construção do labirinto **e** a busca do caminho | aschulz- |
+[MIT](LICENSE.md). Escolhemos uma licença **permissiva** porque o `mazegen`
+foi feito para ser reutilizado: qualquer pessoa pode usar, modificar e
+redistribuir o código (inclusive em projetos fechados), desde que mantenha o
+aviso de copyright. Uma licença **copyleft** como a GPL obrigaria quem
+distribui uma versão modificada a liberar o código sob a mesma licença, o
+que restringe o reuso; para uma biblioteca pequena de estudo, não fazia
+sentido.
