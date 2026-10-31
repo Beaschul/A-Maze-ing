@@ -6,6 +6,7 @@ import sys
 
 from app.config import parse_config
 from app.errors import ConfigError
+from app.render import RenderState, display
 from mazegen.maze_generator import MazeGenerator
 from mazegen.errors import MazeError
 from mazegen.writer import write_output
@@ -71,6 +72,19 @@ def main(argv: list[str]) -> int:
     except Exception as exc:  # noqa: BLE001
         print(f"Unexpected write error: {exc}", file=sys.stderr)
         return 1
+
+    # 4. Display the maze in the terminal
+    try:
+        display(maze, RenderState())
+    except Exception as exc:  # noqa: BLE001
+        print(f"Unexpected display error: {exc}", file=sys.stderr)
+        return 1
+
+    # The subject allows omitting the "42" when the maze is too small,
+    # but requires an error message on the console in that case.
+    if not maze.pattern_cells:
+        print("Error: the maze is too small to draw the \"42\" pattern.",
+              file=sys.stderr)
 
     print(f"OK: Maze {config.width}x{config.height} generated successfully!")
     print(f"Output written to: {config.output_file}")
