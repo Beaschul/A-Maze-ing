@@ -1,4 +1,5 @@
-# Keys are case-sensitive: 'width' is not WIDTH.
+# Keys are case-insensitive: 'width' is the same key as WIDTH.
+WIDTH=20
 HEIGHT=15
 ENTRY=0,0
 EXIT=19,14
