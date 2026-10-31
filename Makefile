@@ -26,11 +26,11 @@ $(DEPS): requirements.txt | $(PYTHON)
 install: $(DEPS)
 
 
-run:
+run: $(PYTHON)
 	$(PYTHON) $(MAIN) $(CONFIG)
 
 
-debug:
+debug: $(PYTHON)
 	$(PYTHON) -m pdb $(MAIN) $(CONFIG)
 
 

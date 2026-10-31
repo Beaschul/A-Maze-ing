@@ -4,7 +4,8 @@ Every algorithm is a function with the :data:`Carver` signature: it receives
 a fully closed :class:`~mazegen.walls.WallGrid` (with the "42" already
 blocked), the private random generator and the start cell, and opens walls
 until every free cell is reachable from the start, without any loop (a
-spanning tree). It returns the opened walls in order, for the animation.
+spanning tree). It returns the opened walls in order, so an application
+can replay them (e.g. to animate the generation).
 
 The generator only looks the algorithm up by name, so adding one is a new
 function plus one entry in :data:`_CARVERS`.

@@ -178,6 +178,14 @@ def run_config(path: Path, seeds: int, workdir: Path) -> list[str]:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
+    """Parse the command-line arguments.
+
+    Args:
+        argv: Arguments, without the program name.
+
+    Returns:
+        The number of seeds and the configs to run.
+    """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--seeds", type=int, default=DEFAULT_SEEDS,
                         metavar="N", help="seeds 1..N per config "
@@ -188,6 +196,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str]) -> int:
+    """Run every config over every seed and print a summary.
+
+    Args:
+        argv: Arguments, without the program name.
+
+    Returns:
+        0 if every config passed, 1 otherwise.
+    """
     args = parse_args(argv)
     configs = args.configs or sorted(CONFIG_DIR.glob("*.txt"))
     failed: dict[str, list[str]] = {}
