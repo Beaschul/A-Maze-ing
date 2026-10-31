@@ -100,8 +100,8 @@ Uma chave `KEY=VALUE` por linha. As linhas que começam com `#` são ignoradas.
 
 Regras de leitura:
 
-- As chaves diferenciam maiúsculas de minúsculas: `width=20` não vale como
-  `WIDTH`.
+- As chaves aceitam maiúsculas ou minúsculas: `width=20` vale como
+  `WIDTH=20` (e as duas juntas contam como chave repetida).
 - Espaços em volta do `=` e no começo/fim da linha são ignorados
   (`WIDTH = 20` funciona).
 - A linha é separada no primeiro `=`; linha sem `=` é erro.

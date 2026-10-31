@@ -40,7 +40,7 @@ EXPECTED: dict[str, str] = {
     "missing_exit": "missing mandatory key(s): EXIT",
     "missing_output_file": "missing mandatory key(s): OUTPUT_FILE",
     "missing_perfect": "missing mandatory key(s): PERFECT",
-    "lowercase_key": "missing mandatory key(s): WIDTH",
+    "duplicate_key_mixed_case": "line 8: duplicate key 'WIDTH'",
     "width_not_integer": "line 2: WIDTH must be an integer",
     "width_float": "line 2: WIDTH must be an integer",
     "width_empty": "line 2: WIDTH must be an integer",
@@ -197,6 +197,16 @@ def test_spaces_comments_and_lowercase_bool(tmp_path: Path) -> None:
     assert config.exit == (9, 7)
     assert config.perfect is False
     assert config.seed is None
+
+
+def test_lowercase_keys(tmp_path: Path) -> None:
+    """Keys are case-insensitive: 'width' counts as WIDTH."""
+    config = parse_config(write_config(tmp_path, VALID.lower()))
+    assert (config.width, config.height) == (20, 15)
+    assert config.entry == (0, 0)
+    assert config.exit == (19, 14)
+    assert config.output_file == "maze.txt"
+    assert config.perfect is True
 
 
 def test_file_with_bom(tmp_path: Path) -> None:

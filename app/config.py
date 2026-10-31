@@ -141,15 +141,17 @@ def _build_config(
             raise ConfigError(
                 f"missing '=' in line: {_shorten(text)}", line=line_no
             )
-        key, _, value = text.partition("=")
-        key = key.strip()
+        name, _, value = text.partition("=")
+        name = name.strip()
         value = value.strip()
+        # Keys are case-insensitive: "width=20" is the same as "WIDTH=20".
+        key = name.upper()
 
         if not key:
             raise ConfigError("empty key before '='", line=line_no)
         if key not in KNOWN_KEYS:
             print(
-                f"warning: line {line_no}: unknown key {_shorten(key)}"
+                f"warning: line {line_no}: unknown key {_shorten(name)}"
                 " (ignored)",
                 file=sys.stderr,
             )
