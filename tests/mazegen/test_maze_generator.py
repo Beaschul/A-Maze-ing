@@ -1,11 +1,13 @@
 """Tests for the MazeGenerator interface.
 
-Only the parts already implemented are covered: the "42" pattern cells,
-the entry/exit check against them and the solution properties.
+Only the parts already implemented are covered: the constructor checks
+(size, entry/exit inside the grid, different, off the "42" pattern), the
+"42" pattern cells and the solution properties.
 """
 
 import pytest
 
+from mazegen.constants import MAX_DIMENSION, MIN_DIMENSION
 from mazegen.errors import MazeError
 from mazegen.maze_generator import MazeGenerator
 from mazegen.pattern import place_pattern
@@ -38,6 +40,50 @@ def test_entry_on_pattern_raises() -> None:
 def test_exit_on_pattern_raises() -> None:
     with pytest.raises(MazeError, match="exit"):
         MazeGenerator(20, 15, (0, 0), ON_PATTERN)
+
+
+@pytest.mark.parametrize(
+    ("width", "height", "match"),
+    [
+        (MIN_DIMENSION - 1, 15, "width"),
+        (MAX_DIMENSION + 1, 15, "width"),
+        (20, MIN_DIMENSION - 1, "height"),
+        (20, MAX_DIMENSION + 1, "height"),
+    ],
+)
+def test_size_out_of_bounds_raises(
+    width: int, height: int, match: str
+) -> None:
+    with pytest.raises(MazeError, match=match):
+        MazeGenerator(width, height, (0, 0), (1, 1))
+
+
+def test_size_at_bounds_is_accepted() -> None:
+    MazeGenerator(MIN_DIMENSION, MIN_DIMENSION, (0, 0), (1, 1))
+    MazeGenerator(MAX_DIMENSION, MAX_DIMENSION, (0, 0), (1, 1))
+
+
+@pytest.mark.parametrize(
+    ("entry", "exit", "match"),
+    [
+        ((-1, 0), (19, 14), "entry"),
+        ((20, 0), (19, 14), "entry"),
+        ((0, 15), (19, 14), "entry"),
+        ((0, 0), (0, -1), "exit"),
+        ((0, 0), (20, 14), "exit"),
+        ((0, 0), (19, 15), "exit"),
+    ],
+)
+def test_entry_exit_outside_raises(
+    entry: tuple[int, int], exit: tuple[int, int], match: str
+) -> None:
+    with pytest.raises(MazeError, match=f"{match} .* outside"):
+        MazeGenerator(20, 15, entry, exit)
+
+
+def test_entry_equals_exit_raises() -> None:
+    with pytest.raises(MazeError, match="same cell"):
+        MazeGenerator(20, 15, (3, 3), (3, 3))
 
 
 def test_solution_before_generate_raises() -> None:

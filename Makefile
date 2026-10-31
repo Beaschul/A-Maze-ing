@@ -61,7 +61,9 @@ test-analyzer: $(DEPS)
 check: test test-analyzer
 
 build: $(DEPS)
-	$(PYTHON) -m build
+	rm -f mazegen-*.whl mazegen-*.tar.gz
+	$(PYTHON) -m build --outdir .
+	rm -rf build/ mazegen.egg-info/
 
 help:
 	@echo "Available targets:"
@@ -75,4 +77,4 @@ help:
 	@echo "  make test          run the test suite with pytest"
 	@echo "  make test-analyzer run maze_analyzer on every test config, 50 seeds"
 	@echo "  make check         make test + make test-analyzer"
-	@echo "  make build         build the .whl and .tar.gz packages"
+	@echo "  make build         build mazegen-*.whl and mazegen-*.tar.gz at the repo root"
