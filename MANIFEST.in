@@ -1,0 +1,4 @@
+# The sdist only ships the mazegen package (see pyproject.toml): drop the
+# files setuptools adds by default.
+exclude README.md
+prune tests

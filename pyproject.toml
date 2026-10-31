@@ -1,4 +1,29 @@
-# Packaging metadata ([build-system] and [project]) comes with issue #16.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mazegen"
+version = "1.0.0"
+description = "Reusable maze generator: perfect mazes, Pac-Man boards and shortest paths."
+readme = "mazegen/README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "fsayuri-" },
+    { name = "aschulz-" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed",
+]
+
+# Only the reusable package goes into the .whl / .tar.gz: never app/, tests/
+# or tools/.
+[tool.setuptools.packages.find]
+include = ["mazegen", "mazegen.*"]
+
+[tool.setuptools.package-data]
+mazegen = ["py.typed", "README.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

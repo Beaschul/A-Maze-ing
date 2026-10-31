@@ -11,6 +11,7 @@ import secrets
 
 from mazegen.algorithms import DEFAULT_ALGORITHM, get_carver
 from mazegen.braid import braid
+from mazegen.constants import MAX_DIMENSION, MIN_DIMENSION
 from mazegen.directions import Direction
 from mazegen.errors import MazeError
 from mazegen.pattern import place_pattern
@@ -44,7 +45,7 @@ class MazeGenerator:
         maze = MazeGenerator(20, 15, entry=(0, 0), exit=(19, 14), seed=42)
         maze.generate()
         maze.has_wall((0, 0), Direction.NORTH)  # True
-        maze.solution_directions                 # "SSEN..."
+        maze.solution_directions                 # "EESEN..."
     """
 
     def __init__(
@@ -77,6 +78,20 @@ class MazeGenerator:
                 outside the maze, equal, or on the "42" pattern, or the
                 algorithm is unknown.
         """
+        for name, size in (("width", width), ("height", height)):
+            if not MIN_DIMENSION <= size <= MAX_DIMENSION:
+                raise MazeError(
+                    f"{name} must be between {MIN_DIMENSION} and "
+                    f"{MAX_DIMENSION}, got {size}"
+                )
+        for name, (x, y) in (("entry", entry), ("exit", exit)):
+            if not (0 <= x < width and 0 <= y < height):
+                raise MazeError(
+                    f"{name} ({x}, {y}) is outside the "
+                    f"{width}x{height} maze"
+                )
+        if entry == exit:
+            raise MazeError(f"entry and exit are the same cell {entry}")
         self.width = width
         self.height = height
         self.entry = entry
