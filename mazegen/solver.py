@@ -27,8 +27,8 @@ class Solution:
     Attributes:
         path: Cells from the start to the goal, both included.
         directions: The same path as the letters N, E, S and W.
-        history: Cells in the order they left the queue, for the search
-            animation.
+        history: Cells in the order they left the queue, so an
+            application can replay the search (e.g. to animate it).
     """
 
     path: list[Cell]

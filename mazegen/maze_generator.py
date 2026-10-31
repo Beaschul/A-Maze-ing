@@ -37,8 +37,9 @@ class MazeGenerator:
         * Algorithm: chosen by name (see
           :data:`mazegen.algorithms.ALGORITHMS`). Each one is a separate
           strategy with the same signature.
-        * Animations: :meth:`generate` records :attr:`carve_history` and
-          :attr:`search_history`; the application replays them.
+        * Replay data: :meth:`generate` records :attr:`carve_history` and
+          :attr:`search_history`, so an application can replay the
+          generation and the search (e.g. to animate them).
 
     Example::
 
@@ -163,13 +164,13 @@ class MazeGenerator:
 
     @property
     def carve_history(self) -> list[tuple[Cell, Direction]]:
-        """Walls in the order they were opened, for the animation."""
+        """Walls in the order they were opened, e.g. to animate them."""
         self._require_walls()
         return list(self._carve_history)
 
     @property
     def search_history(self) -> list[Cell]:
-        """Cells in the order the solver explored them, for the animation."""
+        """Cells in the order the solver explored them, e.g. to animate."""
         return list(self._require_solution().history)
 
     def _require_walls(self) -> WallGrid:

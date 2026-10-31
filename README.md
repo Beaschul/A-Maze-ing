@@ -12,7 +12,7 @@ interativo.
 O gerador fica num pacote reutilizável (`mazegen`), que vai ser distribuído
 como `.whl` para ser usado em projetos futuros.
 
-## Como rodar
+## Instruções
 
 Requisito: Python 3.10 ou mais novo.
 
@@ -220,14 +220,35 @@ Resultado: 6 células e 5 paredes abertas (6 - 1), ou seja, uma árvore.
 A versão "de livro" é recursiva, mas o Python para com erro depois de cerca
 de 1000 chamadas aninhadas. Num labirinto grande o caminho chega a milhares
 de células, então a pilha é uma lista comum (`stack.append` / `stack.pop`).
-Um 500x500 gera em cerca de 1 segundo.
+Um 500x500 perfeito gera em cerca de 2 segundos.
 
 #### Por que escolhemos esse algoritmo
 
 - É o mais simples de implementar e de explicar.
 - Gera corredores longos, que ficam bonitos no terminal.
-- A ordem em que as paredes são abertas já é a ordem natural para a animação
-  (`carve_history`).
+- A ordem em que as paredes são abertas fica gravada em `carve_history`:
+  dados prontos para uma animação futura (a animação não foi implementada).
+
+### Modo Pac-Man (`PERFECT=False`)
+
+Parte do labirinto perfeito do backtracker e faz um *braid*
+(`mazegen/braid.py`): visita os becos sem saída e abre mais uma parede em
+cada um, o que transforma o beco em corredor e cria um ciclo. Para cada
+parede que abre:
+
+- nunca abre a borda externa nem uma célula do "42";
+- nunca cria uma área 3x3 aberta (`creates_open_area`, em
+  `mazegen/validator.py`);
+- prefere não criar salas 2x2, para os corredores ficarem finos, e prefere
+  abrir na direção de outro beco, resolvendo os dois de uma vez.
+
+No fim, se o labirinto tiver menos de 2 ciclos independentes (`MIN_LOOPS`,
+em `mazegen/constants.py`), abre paredes extras. Um 2x2 não comporta isso e
+dá erro `MazeError` com mensagem clara.
+
+**Bônus (sem becos):** na prática, o tabuleiro sai sem nenhum beco sem saída
+real. Para conferir:
+`python3 tools/maze_analyzer.py maze.txt --max-dead-ends 0`.
 
 ### Seed
 
@@ -310,8 +331,8 @@ Usando o labirinto do exemplo acima, com entrada `A = (0,0)` e saída
 Seguindo os pais a partir da saída: `(2,0) ←N (2,1) ←E (1,1) ←S (1,0) ←E
 (0,0)`. Invertendo: **`ESEN`**.
 
-A ordem da coluna "Tira da fila" é o `search_history`, usado para animar a
-busca.
+A ordem da coluna "Tira da fila" é o `search_history`, guardado para uma
+animação futura da busca.
 
 ## Parte reutilizável: o pacote `mazegen`
 
@@ -344,8 +365,8 @@ maze.has_wall((0, 0), Direction.NORTH)   # True
 maze.pattern_cells                       # células do "42" (sempre fechadas)
 maze.solution                            # [(0, 0), (1, 0), ...] da entrada à saída
 maze.solution_directions                 # "EESEN..."
-maze.carve_history                       # paredes abertas, em ordem (animação)
-maze.search_history                      # células visitadas pelo BFS, em ordem
+maze.carve_history                       # paredes abertas, em ordem (para animação futura)
+maze.search_history                      # células visitadas pelo BFS, em ordem (idem)
 
 try:
     MazeGenerator(20, 15, entry=(0, 0), exit=(20, 0))
@@ -358,13 +379,24 @@ Bits das paredes: `NORTH = 1`, `EAST = 2`, `SOUTH = 4`, `WEST = 8`; bit ligado
 outro `MazeGenerator`. Mais detalhes (e como escrever o arquivo de saída) em
 [`mazegen/README.md`](mazegen/README.md).
 
-## Divisão do trabalho
+## Equipe e gestão do projeto
 
 | Quem | Parte |
 |---|---|
 | **fsayuri-** | **Core (`mazegen/`)**: estrutura do repo, interface pública, modelo de paredes, padrão 42, algoritmo de geração + seed, menor caminho, modo Pac-Man, validador interno e empacotamento |
 | **aschulz-** | **App (`app/`)**: Makefile, parser do config, arquivo de saída, `a_maze_ing.py`, bateria do analyzer, render no terminal, menu, lint e README/LICENSE |
-| **As duas** | Interface do `MazeGenerator` (contrato core ↔ app), revisão dos PRs e testes | 
+| **As duas** | Interface do `MazeGenerator` (contrato core ↔ app), revisão dos PRs e testes |
+
+### Planejamento e evolução
+
+Em 14/10 quebramos o subject em 21 issues no GitHub (core, app, infra e
+bônus). O core ficou pronto até 22/10 e o app e o empacotamento até 31/10.
+
+### O que funcionou e o que melhorar
+
+Funcionou definir cedo o contrato do `MazeGenerator` (issue #2): core e app
+andaram em paralelo. A melhorar: os bônus de animação e de um segundo
+algoritmo de geração ficaram para uma próxima versão.
 
 ## Ferramentas
 
