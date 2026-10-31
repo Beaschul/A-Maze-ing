@@ -168,16 +168,15 @@ def test_wrong_number_of_arguments(
 
 def test_default_config_is_valid() -> None:
     """The config.txt shipped with the repository is accepted."""
+    # Only check that the file is valid, not its values: they may be
+    # changed to try other mazes (size, seed, mode...).
     config = parse_config(str(ROOT / "config.txt"))
-    assert config == MazeConfig(
-        width=20,
-        height=15,
-        entry=(0, 0),
-        exit=(19, 14),
-        output_file="maze.txt",
-        perfect=True,
-        seed=42,
-    )
+    assert isinstance(config, MazeConfig)
+    for x, y in (config.entry, config.exit):
+        assert 0 <= x < config.width
+        assert 0 <= y < config.height
+    assert config.entry != config.exit
+    assert config.output_file
 
 
 def test_spaces_comments_and_lowercase_bool(tmp_path: Path) -> None:

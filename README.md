@@ -107,6 +107,37 @@ quando ele existe, e o programa sai com código 1. Há um exemplo de cada erro
 em [`tests/configs_invalid/`](tests/configs_invalid/), testados em
 `tests/app/test_config.py`.
 
+## Menu interativo
+
+Depois de gerar e salvar o labirinto, o programa desenha o labirinto e mostra
+um menu (`app/menu.py`). O ciclo é: desenhar → mostrar o menu → ler a opção →
+agir.
+
+```
+Seed: 42  |  20x15  |  perfect  |  shortest path: 89 steps  |  file: maze.txt
+=== A-Maze-ing ===
+1. Re-generate a new maze
+2. Show/Hide the shortest path
+3. Change wall colours
+4. Quit
+Your choice:
+```
+
+| Opção | O que faz |
+|---|---|
+| `1` | Gera um labirinto novo com uma **seed aleatória nova** e **reescreve o `OUTPUT_FILE`**, para o arquivo sempre bater com o que está na tela. A seed nova aparece na linha de status, então o labirinto pode ser reproduzido com `SEED=<seed>`. |
+| `2` | Mostra/esconde o menor caminho. |
+| `3` | Troca a paleta: cor das paredes e cor própria do "42". |
+| `4` | Sai do programa. |
+
+- Mostrar/esconder o caminho e a paleta continuam valendo depois de regenerar.
+- Entrada inválida (vazia, letras, número fora do menu) só mostra uma mensagem
+  e pergunta de novo.
+- `Ctrl+D` (`EOFError`) e `Ctrl+C` (`KeyboardInterrupt`) saem do menu como a
+  opção 4, sem traceback.
+- Se não der para salvar o labirinto novo (ex.: permissão), aparece um
+  `WriteError` e o programa continua rodando.
+
 ## Algoritmo de geração
 
 ### O que é um labirinto perfeito
@@ -292,7 +323,7 @@ busca.
 - [ ] `PERFECT=False`: tabuleiro estilo Pac-Man (conectado, com cantos e centro abertos, pelo menos 2 loops e poucos becos sem saída)
 - [ ] Arquivo de saída em hexadecimal, com entrada, saída e menor caminho (`N/E/S/W`)
 - [ ] Visualização no terminal com paredes, entrada, saída e caminho
-- [ ] Menu: gerar outro labirinto, mostrar/esconder o caminho, mudar a cor das paredes
+- [x] Menu: gerar outro labirinto, mostrar/esconder o caminho, mudar a cor das paredes
 - [ ] Pacote `mazegen-*.whl` na raiz e `LICENSE.md`
 - [ ] `flake8` e `mypy` sem erros
 

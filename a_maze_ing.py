@@ -6,14 +6,13 @@ import sys
 
 from app.config import parse_config
 from app.errors import ConfigError
-from app.render import RenderState, display
-from mazegen.maze_generator import MazeGenerator
+from app.menu import TOO_SMALL_FOR_42, MenuState, build_maze, run_menu, \
+    save_maze
 from mazegen.errors import MazeError
-from mazegen.writer import write_output
 
 
 def main(argv: list[str]) -> int:
-    """Run the maze generator.
+    """Run the maze generator, then the interactive menu.
 
     Args:
         argv: Command-line arguments (excluding the program name).
@@ -34,15 +33,7 @@ def main(argv: list[str]) -> int:
 
     # 2. Generate the maze
     try:
-        maze = MazeGenerator(
-            width=config.width,
-            height=config.height,
-            entry=config.entry,
-            exit=config.exit,
-            perfect=config.perfect,
-            seed=config.seed,
-        )
-        maze.generate()
+        maze = build_maze(config, seed=config.seed)
     except MazeError as exc:
         print(f"MazeError: {exc}", file=sys.stderr)
         return 1
@@ -52,20 +43,7 @@ def main(argv: list[str]) -> int:
 
     # 3. Write the output file
     try:
-        # Each cell is a wall bitmask (N=1, E=2, S=4, W=8), which is the
-        # encoding the subject expects, so one hex digit per cell suffices.
-        hex_rows = [
-            "".join(f"{cell:x}" for cell in row)
-            for row in maze.grid
-        ]
-
-        write_output(
-            path=config.output_file,
-            hex_rows=hex_rows,
-            entry=config.entry,
-            exit=config.exit,
-            path_moves=maze.solution_directions,
-        )
+        save_maze(maze, config.output_file)
     except OSError as exc:
         print(f"WriteError: {exc}", file=sys.stderr)
         return 1
@@ -73,22 +51,23 @@ def main(argv: list[str]) -> int:
         print(f"Unexpected write error: {exc}", file=sys.stderr)
         return 1
 
-    # 4. Display the maze in the terminal
+    # 4. Display the maze and let the user interact with it
+    state = MenuState(
+        config=config,
+        maze=maze,
+        message=f"OK: maze written to {config.output_file}.",
+    )
+    # The subject allows omitting the "42" when the maze is too small,
+    # but requires an error message on the console in that case.
+    if not maze.pattern_cells:
+        state.message += "\n" + TOO_SMALL_FOR_42
     try:
-        display(maze, RenderState())
+        run_menu(state)
     except Exception as exc:  # noqa: BLE001
         print(f"Unexpected display error: {exc}", file=sys.stderr)
         return 1
 
-    # The subject allows omitting the "42" when the maze is too small,
-    # but requires an error message on the console in that case.
-    if not maze.pattern_cells:
-        print("Error: the maze is too small to draw the \"42\" pattern.",
-              file=sys.stderr)
-
-    print(f"OK: Maze {config.width}x{config.height} generated successfully!")
-    print(f"Output written to: {config.output_file}")
-    print(f"Shortest path length: {len(maze.solution_directions)} steps")
+    print("Bye!")
     return 0
 
 

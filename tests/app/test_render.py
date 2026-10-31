@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -196,11 +197,24 @@ def test_toggle_path() -> None:
     assert state.show_path
 
 
+def fake_terminal(monkeypatch: pytest.MonkeyPatch,
+                  columns: int, lines: int) -> None:
+    """Fake the terminal size seen by app.render only.
+
+    Patching ``shutil.get_terminal_size`` itself would also change it for
+    pytest, which calls it to draw its progress bar.
+    """
+    fake = SimpleNamespace(
+        get_terminal_size=lambda *args, **kwargs: os.terminal_size(
+            (columns, lines)),
+    )
+    monkeypatch.setattr("app.render.shutil", fake)
+
+
 def test_maze_bigger_than_terminal_warns_without_crashing(
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str]) -> None:
-    monkeypatch.setattr("shutil.get_terminal_size",
-                        lambda *args: os.terminal_size((20, 10)))
+    fake_terminal(monkeypatch, 20, 10)
     display(make_maze(), RenderState())
     out = capsys.readouterr().out
     assert "bigger than the terminal" in out
@@ -210,7 +224,6 @@ def test_maze_bigger_than_terminal_warns_without_crashing(
 def test_maze_fitting_terminal_has_no_warning(
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str]) -> None:
-    monkeypatch.setattr("shutil.get_terminal_size",
-                        lambda *args: os.terminal_size((200, 100)))
+    fake_terminal(monkeypatch, 200, 100)
     display(make_maze(), RenderState())
     assert "bigger than the terminal" not in capsys.readouterr().out

@@ -75,11 +75,19 @@ def read_config(path: Path) -> tuple[list[str], dict[str, str], str | None]:
 
 
 def run_program(config: Path) -> tuple[int, str]:
-    """Run a_maze_ing in-process; return its exit code and output."""
+    """Run a_maze_ing in-process; return its exit code and output.
+
+    stdin is empty, so the interactive menu reads EOF and quits at once.
+    """
     buffer = io.StringIO()
-    with contextlib.redirect_stdout(buffer), \
-            contextlib.redirect_stderr(buffer):
-        code = a_maze_ing.main([str(config)])
+    old_stdin = sys.stdin
+    sys.stdin = io.StringIO("")
+    try:
+        with contextlib.redirect_stdout(buffer), \
+                contextlib.redirect_stderr(buffer):
+            code = a_maze_ing.main([str(config)])
+    finally:
+        sys.stdin = old_stdin
     return code, buffer.getvalue()
 
 
